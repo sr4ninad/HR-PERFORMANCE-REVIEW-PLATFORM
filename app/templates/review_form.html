@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Write Review{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Reviewing {{ assignment.reviewee.display_name }}</h1>
+    <p class="page-subtitle">Reviewer: {{ assignment.reviewer.display_name }} &middot; Cycle: {{ assignment.cycle.name }}</p>
+  </div>
+</div>
+
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+{% if existing and existing.is_locked %}
+<div class="card card--ok">
+  <div class="review-meta">
+    <span class="badge badge-success">locked</span>
+    <span class="muted">Submitted {{ existing.submitted_at.strftime('%Y-%m-%d %H:%M') }}</span>
+    <span class="stat" style="flex-direction:row; align-items:baseline; gap: var(--space-2);">
+      <span class="stat-label">Overall</span>
+      <span class="stat-value" style="font-size: var(--text-lg);">{{ existing.overall_rating }}</span>
+    </span>
+  </div>
+
+  {% for area in skill_areas %}
+  <div class="review-field">
+    <span class="field-label">{{ skill_labels[area] }}</span>
+    <span class="rating-chip">
+      {% if existing[area ~ "_rating"] %}{{ "%d"|format(existing[area ~ "_rating"]) }}<span class="of5">/5</span>{% else %}&mdash;{% endif %}
+    </span>
+    <span class="field-text">{{ existing[area ~ "_text"] or "" }}</span>
+  </div>
+  {% endfor %}
+
+  {% if existing.additional_notes %}
+  <p style="margin-top: var(--space-4);"><strong>Additional notes</strong></p>
+  <p class="muted">{{ existing.additional_notes }}</p>
+  {% endif %}
+</div>
+{% elif not cycle_open %}
+<div class="empty-state">
+  <p class="empty-title">This cycle is closed</p>
+  <p class="empty-hint">{{ assignment.cycle.name }} has ended, so this review can no longer be submitted.</p>
+</div>
+{% else %}
+<div class="card">
+  <form method="post" action="/reviews/write/{{ assignment.id }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <p class="section-title" style="margin-top:0;">Ratings by skill area</p>
+    {% for area in skill_areas %}
+    <div class="rating-row">
+      <label>{{ skill_labels[area] }}</label>
+      <input type="text" name="{{ area }}_text" value="{{ posted[area] if posted else '' }}" placeholder="Comments on {{ skill_labels[area]|lower }}">
+      <div class="rating" role="radiogroup" aria-label="{{ skill_labels[area] }} rating">
+        {% for v in [1,2,3,4,5] %}
+        {% set is_checked = (posted and posted[area ~ '_rating']|string == v|string) or (not posted and v == 5) %}
+        <input type="radio" class="rating-input" id="{{ area }}_rating_{{ v }}" name="{{ area }}_rating" value="{{ v }}" {% if is_checked %}checked{% endif %}>
+        <label class="rating-option" for="{{ area }}_rating_{{ v }}">{{ v }}</label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <label for="additional_notes">Additional notes</label>
+    <textarea id="additional_notes" name="additional_notes" rows="4">{{ posted.additional_notes if posted else '' }}</textarea>
+
+    <button type="submit" class="btn">Submit review &mdash; final, cannot be edited after</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

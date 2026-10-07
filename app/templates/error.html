@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Error{% endblock %}
+{% block content %}
+<div class="empty-state" style="max-width:420px; margin: var(--space-16) auto;">
+  <span class="badge badge-danger" style="margin-bottom: var(--space-3);">Error</span>
+  <p class="empty-hint">{{ detail }}</p>
+  <a class="btn secondary" href="/">Back to dashboard</a>
+</div>
+{% endblock %}

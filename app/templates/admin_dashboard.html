@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <p class="page-subtitle">Welcome, {{ nav_user.display_name }} &middot; <strong>{{ nav_position }}</strong></p>
+    <h1>Org-wide completion</h1>
+    <p class="page-subtitle">Read-only content access &mdash; HR can view but never edit a submitted review.</p>
+  </div>
+</div>
+
+{% if cycle %}
+<div class="card">
+  <h2><span class="badge active">active</span> {{ cycle.name }}
+    <span class="muted mono" style="font-weight:400;">{{ cycle.start_date.strftime('%d %b') }} &ndash; {{ cycle.end_date.strftime('%d %b %Y') }}</span></h2>
+  {{ ui.stepper(overview.steps, "Cycle progress") }}
+  <div class="ring-grid">
+    {% for r in overview.rings %}{{ ui.ring(r) }}{% endfor %}
+  </div>
+</div>
+
+<p class="section-title">Reviewer assignments &middot; <span class="mono">{{ submitted }}/{{ total }}</span> peer reviews submitted</p>
+<div class="card">
+  {% if rows_page and rows_page.items %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Reviewee</th><th>Reviewer</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for a in rows_page.items %}
+    {% set submitted_row = a.review is not none and a.review.is_locked %}
+    <tr>
+      <td>{{ a.reviewee.display_name }}</td>
+      <td class="muted">{{ a.reviewer.display_name }}</td>
+      <td>
+        {% if a.status == "pending" %}
+          <span class="badge badge-neutral">awaiting approval</span>
+        {% elif a.status == "rejected" %}
+          <span class="badge badge-danger">rejected</span>
+        {% elif submitted_row %}
+          <span class="badge badge-success">submitted</span>
+        {% else %}
+          <span class="badge badge-warning">not written</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if submitted_row %}
+        <a class="btn secondary btn-sm" href="/reviews/view/{{ a.reviewee.username }}">View</a>
+        {% if a.reviewee_id in released_ids %}
+        <span class="badge badge-neutral">final review released</span>
+        {% else %}
+        <form class="inline" method="post" action="/reviews/{{ a.review.id }}/retract"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="danger btn-sm" type="submit" onclick="return confirm('Retract this submitted review? This clears its content and unlocks it for rewrite. Logged to the audit trail.');">Retract</button>
+        </form>
+        {% endif %}
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% set pager = rows_page %}{% include "_pagination.html" %}
+  {% else %}
+  <div class="empty-state" style="margin-top: var(--space-6);">
+    <p class="empty-title">No assignments yet this cycle</p>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<div class="empty-state">
+  <p class="empty-title">No active cycle</p>
+  <p class="empty-hint"><a href="/admin/cycles">Create or activate one</a> to get started.</p>
+</div>
+{% endif %}
+
+<p class="section-title">Recent cycles</p>
+<div class="card">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Name</th><th>Status</th><th>Dates</th></tr></thead>
+    <tbody>
+    {% for c in recent_cycles %}
+    <tr>
+      <td>{{ c.name }}</td>
+      <td><span class="badge {{ c.status }}">{{ c.status }}</span></td>
+      <td class="muted mono">{{ c.start_date.strftime('%Y-%m-%d') }} &ndash; {{ c.end_date.strftime('%Y-%m-%d') }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="card-foot">
+    <a class="btn secondary" href="/admin/cycles">Manage cycles</a>
+  </div>
+</div>
+{% endblock %}

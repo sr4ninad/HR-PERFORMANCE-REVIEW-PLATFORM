@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+hr_review.db
+.venv/
+venv/
+.secret_key
+hr_review.db-wal
+hr_review.db-shm
+uvicorn.log

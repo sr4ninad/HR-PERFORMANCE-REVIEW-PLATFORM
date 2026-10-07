@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Add user{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Add a user</h1>
+    <p class="page-subtitle">New employees are provisioned here by HR &mdash; there's no self-signup. You don't choose their password: they do, from an invite link.</p>
+  </div>
+  <span class="badge badge-gold">hr_admin only</span>
+</div>
+
+{% if created %}
+<div class="card card--ok" style="max-width:560px;">
+  <h2><span class="badge badge-success">created</span> {{ created.display_name }}</h2>
+  <p>Send {{ created.display_name }} this invite link over a trusted channel. They'll choose their own password with it.</p>
+  <code class="reset-link">{{ invite_url }}</code>
+  <p class="muted">It works once and expires in {{ invite_days }} days. It won't be shown again &mdash; if it's lost or expires, open
+    <a href="/admin/users/{{ created.id }}">{{ created.display_name }}</a> and create a new invite.
+    Until they accept it, the account can't be logged into.</p>
+</div>
+{% endif %}
+
+<div class="card" style="max-width:440px;">
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="post" action="/register"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="username">Username</label>
+    <input type="text" id="username" name="username" required minlength="3" maxlength="64" pattern="[A-Za-z0-9_.\-]+" placeholder="first.last">
+    <p class="muted field-hint">Use first.last &mdash; it's shown as their name, e.g. ananya.joshi &rarr; Ananya Joshi.</p>
+    <label for="role">Role</label>
+    <select id="role" name="role">
+      {% for r in roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+    </select>
+    <label for="manager_id">Manager</label>
+    <select id="manager_id" name="manager_id">
+      <option value="">&mdash; none &mdash;</option>
+      {% for m in managers %}<option value="{{ m.id }}">{{ m.display_name }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="btn">Create user and invite link</button>
+  </form>
+</div>
+<p class="muted"><a href="/admin/users">&larr; All users</a></p>
+{% endblock %}

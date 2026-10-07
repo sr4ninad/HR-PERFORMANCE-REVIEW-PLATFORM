@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Write a Review{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Who are you reviewing?</h1>
+    <p class="page-subtitle">People who've selected you as one of their reviewers.</p>
+  </div>
+</div>
+
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+{% if assignments %}
+<div class="card">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Reviewee</th><th></th></tr></thead>
+    <tbody>
+    {% for a in assignments %}
+    <tr>
+      <td>{{ a.reviewee.display_name }}</td>
+      <td><a class="btn secondary btn-sm" href="/reviews/write/{{ a.id }}">Write review</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <p class="empty-title">Nothing to write</p>
+  <p class="empty-hint">Nobody has selected you as a reviewer yet.</p>
+</div>
+{% endif %}
+{% endblock %}

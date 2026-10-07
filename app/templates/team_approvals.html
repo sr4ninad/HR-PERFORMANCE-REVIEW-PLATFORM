@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Reviewer Approvals{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Reviewer approvals</h1>
+    <p class="page-subtitle">
+      Approve or reject the reviewers your people nominated, and add others if needed.
+      Aim for at least {{ min_responses }} approved reviewers each &mdash; that's the minimum before a final review can be released.
+      {% if cycle %} Cycle: {{ cycle.name }}.{% endif %}
+    </p>
+  </div>
+</div>
+
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+{% if not cycle %}
+<div class="empty-state"><p class="empty-title">No active cycle</p></div>
+{% elif not rows_page.items %}
+<div class="empty-state"><p class="empty-title">Nobody to approve for</p><p class="empty-hint">No one reports to you.</p></div>
+{% else %}
+  {% for row in rows_page.items %}
+  <div class="card {{ 'card--action' if row.pending else '' }}">
+    <h2>
+      {{ row.person.display_name }}
+      {% if row.finalized %}<span class="badge badge-success">review released</span>
+      {% elif row.pending %}<span class="badge badge-warning">{{ row.pending }} to decide</span>{% endif %}
+      <span class="badge badge-neutral mono">{{ row.approved }} approved</span>
+    </h2>
+    {% if row.writes_final_review %}
+    <p class="muted">
+      {{ row.person.display_name }} has no manager, so HR writes their final review.
+      <a class="btn secondary btn-sm" href="/team/reviews/{{ row.person.username }}?cycle_id={{ cycle.id }}">{{ "View final review" if row.finalized else "Write final review" }}</a>
+    </p>
+    {% endif %}
+
+    {% if row.assignments %}
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Reviewer</th><th>Added by</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for a in row.assignments %}
+      <tr>
+        <td>{{ a.reviewer.display_name }}</td>
+        <td class="muted">{{ {"nominated": "employee", "manager": "manager", "hr": "HR"}[a.source] }}</td>
+        <td>
+          {% if a.status == "pending" %}<span class="badge badge-warning">pending</span>
+          {% elif a.status == "approved" %}<span class="badge badge-success">approved</span>
+          {% else %}<span class="badge badge-danger">rejected</span>{% endif %}
+        </td>
+        <td>
+          {% if a.status == "pending" and not row.finalized %}
+          <div class="btn-row">
+            <form class="inline" method="post" action="/team/approvals/{{ a.id }}/approve" hx-swap="innerHTML show:none"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn-sm">Approve</button></form>
+            <form class="inline" method="post" action="/team/approvals/{{ a.id }}/reject" hx-swap="innerHTML show:none"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="secondary btn-sm">Reject</button></form>
+          </div>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="muted">No nominations yet.</p>
+    {% endif %}
+
+    {% if not row.finalized %}
+    <form method="post" action="/team/reviewers/add" hx-swap="innerHTML show:none" class="btn-row add-reviewer" style="margin-top: var(--space-3);"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="reviewee" value="{{ row.person.username }}">
+      <select name="reviewer" aria-label="Add a reviewer for {{ row.person.display_name }}">
+        {% for c in row.candidates %}<option value="{{ c.username }}">{{ c.display_name }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="secondary btn-sm">Add reviewer</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% set pager = rows_page %}{% include "_pagination.html" %}
+{% endif %}
+{% endblock %}

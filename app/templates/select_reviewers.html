@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Nominate Reviewers{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Nominate your reviewers</h1>
+    {% if cycle %}<p class="page-subtitle">Cycle: {{ cycle.name }}. Pick {{ min_nominations }}&ndash;{{ max_nominations }} colleagues; {{ approver }} approves the final list.</p>{% endif %}
+  </div>
+</div>
+
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+{% if nominated %}
+<div class="card {{ 'card--action' if awaiting_approval else 'card--ok' }}" style="max-width:480px;">
+  <h2>
+    {% if awaiting_approval %}<span class="badge badge-warning">awaiting approval</span>
+    {% else %}<span class="badge badge-success">finalized</span>{% endif %}
+    Nominations sent
+  </h2>
+  <p class="muted">You nominated:</p>
+  <ul>{% for name in nominated %}<li>{{ name }}</li>{% endfor %}</ul>
+  <p class="muted">
+    {% if awaiting_approval %}
+      {{ approver }} is reviewing your nominations.
+    {% else %}
+      {{ approver }} has finalized your reviewers.
+    {% endif %}
+    To keep feedback anonymous you won't see which nominees were approved, who else was added,
+    or any individual review &mdash; only your final review (written by {{ approver }}) and the combined scores.
+  </p>
+</div>
+{% elif cycle %}
+<div class="card" style="max-width:480px;">
+  <form method="post" action="/assignments/select"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <fieldset class="checkbox-list">
+      <legend class="field-label">Colleagues</legend>
+      {% for c in candidates %}
+      <label class="checkbox-row">
+        <input type="checkbox" name="reviewers" value="{{ c.username }}">
+        <span>{{ c.display_name }}</span>
+      </label>
+      {% endfor %}
+    </fieldset>
+    <button type="submit" class="btn">Send nominations</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

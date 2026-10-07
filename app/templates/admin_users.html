@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Users</h1>
+    <p class="page-subtitle">Roles, reporting lines, and password resets.</p>
+  </div>
+  <a class="btn" href="/register">Add user</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Reports to</th><th></th></tr></thead>
+    <tbody>
+    {% for u in users_page.items %}
+    <tr>
+      <td>{{ u.display_name }}{% if u.id in pending_ids %} <span class="badge badge-warning">invite pending</span>{% endif %}</td>
+      <td class="muted mono">{{ u.username }}</td>
+      <td><span class="badge {% if u.role == 'hr_admin' %}badge-gold{% elif u.role == 'manager' %}badge-accent{% else %}badge-neutral{% endif %}">{{ u.role.replace('_', ' ') }}</span></td>
+      <td class="muted">{{ u.manager.display_name if u.manager else "" }}</td>
+      <td><a class="btn secondary btn-sm" href="/admin/users/{{ u.id }}">Edit</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% set pager = users_page %}{% include "_pagination.html" %}
+</div>
+{% endblock %}

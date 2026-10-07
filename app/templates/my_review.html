@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}My Review{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>My review</h1>
+    <p class="page-subtitle">Written by your manager (or HR, if you have no manager) from your colleagues' feedback. Individual peer reviews stay anonymous and are never shown.</p>
+  </div>
+</div>
+
+{% if finals_page.items %}
+  {% for f in finals_page.items %}
+  {% set snap = snapshots[f.id] %}
+  <div class="card card--ok">
+    <div class="review-meta">
+      <strong>{{ f.cycle.name }}</strong>
+      <span class="muted">from {{ f.manager.display_name }}</span>
+      <span class="stat" style="flex-direction:row; align-items:baseline; gap: var(--space-2);">
+        <span class="stat-label">Final rating</span>
+        <span class="stat-value" style="font-size: var(--text-lg);">{{ f.final_rating }}<span class="of5">/5</span></span>
+      </span>
+    </div>
+
+    <p><strong>Summary</strong></p>
+    <p>{{ f.summary }}</p>
+    {% if f.strengths %}<p><strong>Strengths</strong></p><p>{{ f.strengths }}</p>{% endif %}
+    {% if f.improvements %}<p><strong>Areas to improve</strong></p><p>{{ f.improvements }}</p>{% endif %}
+
+    {% if snap %}
+    <p class="section-title">Peer scores (combined from {{ snap.responses }} colleagues)</p>
+    {% for area, avg in snap.skills.items() %}
+    <div class="review-field">
+      <span class="field-label">{{ skill_labels[area] }}</span>
+      <span class="rating-chip">{% if avg is not none %}{{ avg }}<span class="of5">/5</span>{% else %}&mdash;{% endif %}</span>
+    </div>
+    {% endfor %}
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% set pager = finals_page %}{% include "_pagination.html" %}
+{% else %}
+<div class="empty-state">
+  <p class="empty-title">No review yet</p>
+  <p class="empty-hint">Your manager releases your review once enough colleagues have responded.</p>
+</div>
+{% endif %}
+{% endblock %}

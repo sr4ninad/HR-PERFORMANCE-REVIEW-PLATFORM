@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Review Cycles{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Review cycles</h1>
+    <p class="page-subtitle">Only one cycle is active at a time &mdash; activating a new one closes the current one.</p>
+  </div>
+</div>
+
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+<p class="section-title">Create a cycle</p>
+<div class="card" style="max-width:420px;">
+  <form method="post" action="/admin/cycles"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" required placeholder="e.g. Q2 2026">
+    <label for="start_date">Start</label>
+    <input type="datetime-local" id="start_date" name="start_date" required>
+    <label for="end_date">End</label>
+    <input type="datetime-local" id="end_date" name="end_date" required>
+    <button type="submit" class="btn">Create as draft</button>
+  </form>
+</div>
+
+<p class="section-title">All cycles</p>
+<div class="card">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Name</th><th>Status</th><th>Dates</th><th></th></tr></thead>
+    <tbody>
+    {% for c in cycles_page.items %}
+    <tr>
+      <td>{{ c.name }}</td>
+      <td><span class="badge {{ c.status }}">{{ c.status }}</span></td>
+      <td class="muted mono">{{ c.start_date.strftime('%Y-%m-%d') }} &ndash; {{ c.end_date.strftime('%Y-%m-%d') }}</td>
+      <td>
+        <div class="btn-row">
+          {% if c.status != "active" %}
+          <form class="inline" method="post" action="/admin/cycles/{{ c.id }}/activate"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn-sm">Activate</button>
+          </form>
+          {% endif %}
+          {% if c.status != "closed" %}
+          <form class="inline" method="post" action="/admin/cycles/{{ c.id }}/close"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="secondary btn-sm">Close</button>
+          </form>
+          {% endif %}
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% set pager = cycles_page %}{% include "_pagination.html" %}
+</div>
+{% endblock %}

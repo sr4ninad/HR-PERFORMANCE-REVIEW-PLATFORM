@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}My Reports{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>My team</h1>
+    <p class="page-subtitle">
+      Progress for everyone in your reporting line. You write the final review for your direct reports;
+      skip-level managers see status only.
+      {% if cycle %} Cycle: {{ cycle.name }}.{% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="card">
+  {% if report_status %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Employee</th><th>Reports to</th><th>Level</th><th>Peer reviews</th><th>Final review</th></tr></thead>
+    <tbody>
+    {% for row in report_status %}
+    <tr>
+      <td>{{ row.user.display_name }}</td>
+      <td class="muted">{{ row.user.manager.display_name if row.user.manager else "" }}</td>
+      <td>
+        {% if row.depth == 1 %}<span class="badge badge-neutral">direct</span>
+        {% else %}<span class="badge badge-accent">skip-level ({{ row.depth }})</span>{% endif %}
+      </td>
+      <td>
+        {% if row.state == "no_cycle" %}
+          <span class="badge badge-neutral">No active cycle</span>
+        {% elif row.state == "not_selected" %}
+          <span class="badge badge-warning">Reviewers not selected</span>
+        {% else %}
+          {% set n = row.submitted %}
+          {% set m = row.total %}
+          <span class="badge {{ 'badge-success' if n == m else 'badge-accent' if n > 0 else 'badge-neutral' }} mono">{{ n }}/{{ m }} submitted</span>
+          <div class="progress-track" style="max-width:160px;">
+            <div class="progress-fill {{ 'is-complete' if m and n == m else '' }}" style="width:{{ (n / m * 100) if m else 0 }}%;"></div>
+          </div>
+          {% if row.pending_approval %}<span class="badge badge-warning">{{ row.pending_approval }} awaiting approval</span>{% endif %}
+        {% endif %}
+      </td>
+      <td>
+        {% if row.depth == 1 and cycle %}
+          {% if row.final and row.final.is_released %}<span class="badge badge-success">released</span>
+          {% elif row.final %}<span class="badge badge-accent">draft</span>{% endif %}
+          <a class="btn secondary btn-sm" href="/team/reviews/{{ row.user.username }}?cycle_id={{ cycle.id }}">
+            {{ "View" if row.final and row.final.is_released else "Write review" }}
+          </a>
+        {% elif cycle %}
+          {% if row.final and row.final.is_released %}<span class="badge badge-success">released</span>
+          {% else %}<span class="muted">&mdash;</span>{% endif %}
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% set pager = lines_page %}{% include "_pagination.html" %}
+  {% else %}
+  <div class="empty-state">
+    <p class="empty-title">No reports on file</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Audit Log{% endblock %}
+
+{% macro icon(name) %}
+{% if name == "review" %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12h5"/></svg>
+{% elif name == "cycle" %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+{% elif name == "person" %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+{% elif name == "alert" %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg>
+{% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3"/></svg>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Audit log</h1>
+    <p class="page-subtitle">Every change in the app, newest first. Read-only &mdash; entries can't be edited or deleted.</p>
+  </div>
+</div>
+
+<div class="tl-filters" role="navigation" aria-label="Filter by category">
+  <a href="/admin/audit" class="{{ 'is-active' if not category else '' }}"{% if not category %} aria-current="page"{% endif %}>All</a>
+  {% for key, label in categories %}
+  <a href="/admin/audit?category={{ key }}" class="{{ 'is-active' if category == key else '' }}"{% if category == key %} aria-current="page"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  {% if groups %}
+    {% for day, entries in groups %}
+    <p class="section-title tl-day">{{ day }}</p>
+    <ol class="timeline">
+      {% for e in entries %}
+      <li class="tl-item cat-{{ e.category }}">
+        <span class="tl-icon">{{ icon(e.icon) }}</span>
+        <div class="tl-body">
+          <div class="tl-sentence">{{ e.sentence }}</div>
+          <div class="tl-meta">
+            <span class="cat-label">{{ e.category_label }}</span>
+            {% for x in e.extra %}<span>&middot; {{ x }}</span>{% endfor %}
+          </div>
+          {% if e.details %}
+          <details class="tl-details">
+            <summary>Recorded details</summary>
+            <pre>{{ e.details }}</pre>
+          </details>
+          {% endif %}
+        </div>
+        <time class="tl-time" datetime="{{ e.when.isoformat() }}">{{ e.when.strftime('%H:%M') }} UTC</time>
+      </li>
+      {% endfor %}
+    </ol>
+    {% endfor %}
+    {% set pager = rows_page %}{% include "_pagination.html" %}
+  {% else %}
+  <div class="empty-state">
+    <p class="empty-title">Nothing recorded yet</p>
+    <p class="empty-hint">Actions like sign-ins, nominations and reviews appear here as they happen.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

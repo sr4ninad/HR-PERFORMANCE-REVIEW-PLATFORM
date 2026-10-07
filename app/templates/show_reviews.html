@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Reviews for {{ target.display_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Reviews for {{ target.display_name }}</h1>
+    {% if read_only %}<p class="page-subtitle">Read-only HR view.</p>{% endif %}
+  </div>
+</div>
+
+{% if reviews_page.items %}
+  {% for review in reviews_page.items %}
+  <div class="card card--ok">
+    <div class="review-meta">
+      <span class="badge badge-success">locked</span>
+      <span class="muted">Submitted {{ review.submitted_at.strftime('%Y-%m-%d %H:%M') }}</span>
+      <span class="stat" style="flex-direction:row; align-items:baseline; gap: var(--space-2);">
+        <span class="stat-label">Overall</span>
+        <span class="stat-value" style="font-size: var(--text-lg);">{{ review.overall_rating }}</span>
+      </span>
+    </div>
+
+    {% for area in skill_areas %}
+    <div class="review-field">
+      <span class="field-label">{{ skill_labels[area] }}</span>
+      <span class="rating-chip">
+        {% if review[area ~ "_rating"] %}{{ review[area ~ "_rating"] }}<span class="of5">/5</span>{% else %}&mdash;{% endif %}
+      </span>
+      <span class="field-text">{{ review[area ~ "_text"] or "" }}</span>
+    </div>
+    {% endfor %}
+
+    {% if review.additional_notes %}
+    <p style="margin-top: var(--space-4);"><strong>Additional notes</strong></p>
+    <p class="muted">{{ review.additional_notes }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% set pager = reviews_page %}{% include "_pagination.html" %}
+{% else %}
+<div class="empty-state">
+  <p class="empty-title">No submitted reviews yet</p>
+</div>
+{% endif %}
+{% endblock %}

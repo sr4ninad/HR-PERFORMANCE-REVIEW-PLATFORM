@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Review: {{ employee.display_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ employee.display_name }} &middot; {{ cycle.name }}</h1>
+    <p class="page-subtitle">
+      Peer feedback, merged automatically. Reviewer names, timestamps and order are never shown.
+    </p>
+  </div>
+  {% if final and final.is_released %}<span class="badge badge-success">released</span>
+  {% elif final %}<span class="badge badge-accent">draft</span>{% endif %}
+</div>
+
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+<div class="card">
+  <h2>Responses</h2>
+  <div class="grid">
+    <div class="stat"><span class="stat-label">Submitted</span><span class="stat-value">{{ merged.responses }}<small>/{{ merged.approved }}</small></span></div>
+    <div class="stat"><span class="stat-label">Merged average</span><span class="stat-value">{% if merged.overall_average is not none %}{{ merged.overall_average }}{% else %}&mdash;{% endif %}</span></div>
+    {% if merged.pending_approval %}
+    <div class="stat"><span class="stat-label">Nominations to decide</span><span class="stat-value"><a href="/team/approvals">{{ merged.pending_approval }}</a></span></div>
+    {% endif %}
+  </div>
+  {% if not merged.can_release %}
+  <p class="muted">At least {{ min_responses }} submitted reviews are needed before the final review can be released, so no single reviewer can be picked out of the averages.</p>
+  {% endif %}
+</div>
+
+<p class="section-title">By skill area</p>
+{% for skill in merged.skills %}
+<div class="card">
+  <div class="review-meta">
+    <strong>{{ skill_labels[skill.area] }}</strong>
+    <span class="rating-chip">{% if skill.average is not none %}{{ skill.average }}<span class="of5">/5</span>{% else %}&mdash;{% endif %}</span>
+  </div>
+  {% if skill.comments %}
+  <ul>{% for c in skill.comments %}<li>{{ c }}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">No comments yet.</p>{% endif %}
+</div>
+{% endfor %}
+
+{% if merged.notes %}
+<p class="section-title">Additional notes</p>
+<div class="card"><ul>{% for n in merged.notes %}<li>{{ n }}</li>{% endfor %}</ul></div>
+{% endif %}
+
+<p class="section-title">Final review</p>
+<div class="card">
+  {% if final and final.is_released %}
+    <p class="muted">Released {{ final.released_at.strftime('%Y-%m-%d') }} by {{ final.manager.display_name }}. Locked.</p>
+    <p><strong>Final rating:</strong> {{ final.final_rating }}/5</p>
+    <p><strong>Summary</strong></p><p>{{ final.summary }}</p>
+    {% if final.strengths %}<p><strong>Strengths</strong></p><p>{{ final.strengths }}</p>{% endif %}
+    {% if final.improvements %}<p><strong>Areas to improve</strong></p><p>{{ final.improvements }}</p>{% endif %}
+  {% else %}
+    {% set v = posted or {} %}
+    <form method="post" action="/team/reviews/{{ employee.username }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="cycle_id" value="{{ cycle.id }}">
+      <label for="summary">Summary (shown to {{ employee.display_name }})</label>
+      <textarea id="summary" name="summary" rows="4">{{ v.summary if posted else (final.summary if final and final.summary else "") }}</textarea>
+      <label for="strengths">Strengths</label>
+      <textarea id="strengths" name="strengths" rows="3">{{ v.strengths if posted else (final.strengths if final and final.strengths else "") }}</textarea>
+      <label for="improvements">Areas to improve</label>
+      <textarea id="improvements" name="improvements" rows="3">{{ v.improvements if posted else (final.improvements if final and final.improvements else "") }}</textarea>
+      <label for="final_rating">Final rating (1&ndash;5){% if merged.suggested_rating %} &mdash; suggested from peer average: {{ merged.suggested_rating }}{% endif %}</label>
+      {% set current = (v.final_rating if posted else (final.final_rating if final and final.final_rating else merged.suggested_rating))|string %}
+      <select id="final_rating" name="final_rating">
+        <option value="">&mdash;</option>
+        {% for r in [1,2,3,4,5] %}<option value="{{ r }}" {% if current == r|string %}selected{% endif %}>{{ r }}</option>{% endfor %}
+      </select>
+      <div class="btn-row">
+        <button type="submit" name="action" value="save" class="btn secondary">Save draft</button>
+        <button type="submit" name="action" value="release" class="btn" {% if not merged.can_release %}disabled{% endif %}
+          onclick="return confirm('Release this review to {{ employee.display_name }}? It locks and can no longer be edited.');">Release to {{ employee.display_name }}</button>
+      </div>
+    </form>
+  {% endif %}
+</div>
+{% if nav_user and nav_user.role == "hr_admin" %}
+<p class="muted"><a href="/team/approvals">&larr; Approvals</a></p>
+{% else %}
+<p class="muted"><a href="/manager/reports">&larr; My team</a></p>
+{% endif %}
+{% endblock %}

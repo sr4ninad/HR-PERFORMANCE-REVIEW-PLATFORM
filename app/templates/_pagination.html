@@ -1,0 +1,10 @@
+{# Expects `pager` (app.pagination.Page), optional `pager_url` (defaults to the current path)
+   and optional `pager_query` (extra query string kept on every link, e.g. "category=reviews"). #}
+{% if pager and pager.pages > 1 %}
+{% set base = (pager_url or request.url.path) ~ "?" ~ ((pager_query ~ "&") if pager_query else "") %}
+<nav class="pagination" aria-label="Pagination">
+  {% if pager.has_prev %}<a class="btn secondary btn-sm" href="{{ base }}page={{ pager.page - 1 }}">&larr; Prev</a>{% else %}<span class="btn secondary btn-sm is-disabled">&larr; Prev</span>{% endif %}
+  <span class="muted mono">Page {{ pager.page }} of {{ pager.pages }} &middot; {{ pager.total }} total</span>
+  {% if pager.has_next %}<a class="btn secondary btn-sm" href="{{ base }}page={{ pager.page + 1 }}">Next &rarr;</a>{% else %}<span class="btn secondary btn-sm is-disabled">Next &rarr;</span>{% endif %}
+</nav>
+{% endif %}

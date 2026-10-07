@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ target.display_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ target.display_name }}</h1>
+    <p class="page-subtitle"><a href="/admin/users">&larr; All users</a></p>
+  </div>
+</div>
+
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+{% if message %}<div class="message">{{ message }}</div>{% endif %}
+
+<p class="section-title">Role &amp; reporting line</p>
+<div class="card" style="max-width:440px;">
+  <form method="post" action="/admin/users/{{ target.id }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="role">Role</label>
+    <select id="role" name="role">
+      {% for r in roles %}<option value="{{ r }}" {% if r == target.role %}selected{% endif %}>{{ r }}</option>{% endfor %}
+    </select>
+    <label for="manager_id">Reports to</label>
+    <select id="manager_id" name="manager_id">
+      <option value="">&mdash; none &mdash;</option>
+      {% for m in managers %}<option value="{{ m.id }}" {% if m.id == target.manager_id %}selected{% endif %}>{{ m.display_name }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="btn">Save</button>
+  </form>
+</div>
+
+<p class="section-title">{{ "Account invite" if invite_pending else "Password reset" }}</p>
+<div class="card" style="max-width:480px;">
+  {% if invite_pending and not reset_url %}
+    <p><span class="badge badge-warning">invite pending</span></p>
+    <p class="muted">{{ target.display_name }} hasn't set a password yet, so the account can't be logged into. If their invite link was lost or has expired, create a new one. Any earlier unused link stops working.</p>
+  {% elif not reset_url %}
+    <p class="muted">Creates a one-time link {{ target.display_name }} can use to choose a new password. You never see the password itself. Any earlier unused link stops working.</p>
+  {% endif %}
+  {% if reset_url %}
+    <div class="message">{{ "Invite link" if invite_pending else "Reset link" }} created. It works once and expires in {{ reset_ttl }}.</div>
+    <p class="muted">Send this to {{ target.display_name }} over a trusted channel. It won't be shown again.</p>
+    <code class="reset-link">{{ reset_url }}</code>
+  {% endif %}
+  <form method="post" action="/admin/users/{{ target.id }}/reset-link"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="btn secondary">{% if reset_url %}Create another link{% elif invite_pending %}Create new invite link{% else %}Create reset link{% endif %}</button>
+  </form>
+</div>
+{% endblock %}

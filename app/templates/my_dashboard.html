@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Welcome, {{ user.display_name }}</h1>
+    <p class="page-subtitle">
+      <strong>{{ position }}</strong>
+      {% if user.manager %} &middot; reports to {{ user.manager.display_name }}{% endif %}
+      {% if team %} &middot; {{ team.direct }} direct report{{ "s" if team.direct != 1 }}{% if team.reporting_line > team.direct %}, {{ team.reporting_line }} in your reporting line{% endif %}{% endif %}
+    </p>
+    {% if cycle %}
+    <p class="page-subtitle">
+      <span class="badge badge-success">active</span>
+      {{ cycle.name }} &middot; {{ cycle.start_date.strftime('%Y-%m-%d') }} &ndash; {{ cycle.end_date.strftime('%Y-%m-%d') }}
+    </p>
+    {% else %}
+    <p class="page-subtitle">No active review cycle right now.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if cycle %}
+{% if my_steps %}
+<div class="card">
+  <h2>Your review &middot; {{ cycle.name }}</h2>
+  {{ ui.stepper(my_steps, "Your review progress") }}
+</div>
+{% endif %}
+<div class="grid">
+
+  {% if user.role != "hr_admin" %}
+  <div class="card {{ 'card--action' if not has_selected_reviewers else 'card--ok' }}">
+    <h2>
+      {% if not has_selected_reviewers %}
+        <span class="badge badge-warning">action needed</span>
+      {% elif awaiting_approval %}
+        <span class="badge badge-accent">with manager</span>
+      {% else %}
+        <span class="badge badge-success">done</span>
+      {% endif %}
+      Your reviewers
+    </h2>
+    {% if not has_selected_reviewers %}
+      <p class="muted">You haven't nominated your reviewers for this cycle yet.</p>
+      <a class="btn" href="/assignments/select">Nominate reviewers</a>
+    {% elif awaiting_approval %}
+      <p class="muted">Nominations sent. Waiting for approval.</p>
+    {% else %}
+      <p class="muted">Your reviewers are finalized. Nothing more to do here.</p>
+    {% endif %}
+  </div>
+
+  <div class="card {{ 'card--action' if pending_to_write else '' }}">
+    <h2>
+      {% if pending_to_write %}<span class="badge badge-warning">action needed</span>{% endif %}
+      Reviews you owe
+    </h2>
+    <div class="stat">
+      <span class="stat-label">Pending</span>
+      <span class="stat-value">{{ pending_to_write|length }}</span>
+    </div>
+    {% if pending_to_write %}
+      <a class="btn" href="/reviews/pick">Write a review</a>
+    {% else %}
+      <p class="muted" style="margin-top: var(--space-3);">You're all caught up.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if team %}
+  <div class="card">
+    <h2>Your team</h2>
+    <div class="stat">
+      <span class="stat-label">Final reviews released</span>
+      <span class="stat-value">{{ team.released }}<small>/{{ team.direct }}</small></span>
+    </div>
+    <p class="muted">{% if team.direct == 1 %}You write the final review for your direct report.{% else %}You write the final review for each of your {{ team.direct }} direct reports.{% endif %}</p>
+    <a class="btn secondary" href="/manager/reports">Open my team</a>
+  </div>
+  {% endif %}
+
+  {% if approvals_waiting is defined %}
+  <div class="card {{ 'card--action' if approvals_waiting else '' }}">
+    <h2>
+      {% if approvals_waiting %}<span class="badge badge-warning">action needed</span>{% endif %}
+      Reviewer approvals
+    </h2>
+    <div class="stat">
+      <span class="stat-label">Waiting on you</span>
+      <span class="stat-value">{{ approvals_waiting }}</span>
+    </div>
+    <a class="btn secondary" href="/team/approvals">Open approvals</a>
+  </div>
+  {% endif %}
+
+  {% if user.role != "hr_admin" %}
+  <div class="card">
+    <h2>Your review</h2>
+    <div class="stat">
+      <span class="stat-label">Released</span>
+      <span class="stat-value">{{ released_reviews_count }}</span>
+    </div>
+    {% if released_reviews_count %}
+      <a class="btn secondary" href="/my/review">Read my review</a>
+    {% else %}
+      <p class="muted" style="margin-top: var(--space-3);">Your review hasn't been released yet.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% else %}
+<div class="empty-state">
+  <p class="empty-title">No active review cycle</p>
+  <p class="empty-hint">Check back once HR opens the next one.</p>
+</div>
+{% endif %}
+{% endblock %}

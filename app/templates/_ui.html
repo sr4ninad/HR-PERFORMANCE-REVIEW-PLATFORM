@@ -1,0 +1,32 @@
+{# Shared UI pieces. Import with: {% import "_ui.html" as ui %} #}
+
+{% macro ring(r) %}
+<div class="ring{% if r.complete %} is-complete{% endif %}">
+  <svg viewBox="0 0 100 100" role="img" aria-label="{{ r.description }}">
+    <title>{{ r.description }}</title>
+    <circle class="ring-track" cx="50" cy="50" r="40" fill="none" stroke-width="9"/>
+    {% if r.value > 0 %}
+    <circle class="ring-fill" cx="50" cy="50" r="40" fill="none" stroke-width="9" stroke-linecap="round"
+            stroke-dasharray="{{ r.circumference }}" stroke-dashoffset="{{ r.offset }}" transform="rotate(-90 50 50)"/>
+    {% endif %}
+    <text class="ring-value" x="50" y="51" text-anchor="middle" dominant-baseline="middle">{{ r.value }}<tspan class="ring-of" dx="1">/{{ r.total }}</tspan></text>
+  </svg>
+  <span class="ring-label">{{ r.label }}</span>
+  <span class="ring-caption">{{ r.caption }}</span>
+  {% if r.complete %}
+  <span class="ring-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>Complete</span>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% macro stepper(steps, label) %}
+<ol class="stepper" aria-label="{{ label }}">
+  {% for s in steps %}
+  <li class="step is-{{ s.state }}"{% if s.state == "current" %} aria-current="step"{% endif %}>
+    <span class="step-dot" aria-hidden="true">{% if s.state == "done" %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg>{% endif %}</span>
+    <span class="step-name">{{ s.name }}<span class="sr-only"> ({{ {"done": "done", "current": "in progress", "todo": "not started"}[s.state] }})</span></span>
+    <span class="step-note">{{ s.note }}</span>
+  </li>
+  {% endfor %}
+</ol>
+{% endmacro %}
